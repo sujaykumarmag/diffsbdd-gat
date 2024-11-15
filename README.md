@@ -105,7 +105,7 @@ python train.py --config configs/args-gat_hyb.yml
 ### Testing
 To evaluate the model on the test dataset (make sure u provide the model file):
 ```bash
-python metric.py 
+python test.py 
 ```
 
 
