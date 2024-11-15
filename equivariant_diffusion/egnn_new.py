@@ -200,18 +200,14 @@ class GINLayer(nn.Module):
         self.aggregator_type = aggregator_type
 
     def forward(self, x, edge_index):
-        # Aggregation step (sum, mean, or max)
         row, col = edge_index
         aggr_out = torch.zeros_like(x)
         aggr_out = scatter_add(x[col], row, dim=0, dim_size=x.size(0))
         
-        # Apply the aggregation function and the learnable parameter eps
         if self.eps is not None:
             out = (1 + self.eps) * aggr_out + x
         else:
             out = aggr_out + x
-        
-        # Apply MLP and activation
         out = self.mlp(out)
         return out
 
@@ -219,94 +215,6 @@ class GINLayer(nn.Module):
 import torch
 import torch.nn as nn
 from torch_geometric.nn import GATConv
-
-# class EGNNHybrid(nn.Module):
-#     def __init__(self, in_node_nf, in_edge_nf, hidden_nf, device='cpu', act_fn=nn.SiLU(), n_layers=3, attention=False,
-#                  norm_diff=True, out_node_nf=None, tanh=False, coords_range=15, norm_constant=1, inv_sublayers=2,
-#                  sin_embedding=False, normalization_factor=100, aggregation_method='sum', reflection_equiv=True,
-#                  use_gin=False, use_gat=False, gat_heads=4):
-#         super(EGNNHybrid, self).__init__()
-#         if out_node_nf is None:
-#             out_node_nf = in_node_nf
-#         self.hidden_nf = hidden_nf
-#         self.device = device
-#         self.n_layers = n_layers
-#         self.coords_range_layer = float(coords_range / n_layers)
-#         self.norm_diff = norm_diff
-#         self.normalization_factor = normalization_factor
-#         self.aggregation_method = aggregation_method
-#         self.reflection_equiv = reflection_equiv
-#         self.use_gin = use_gin
-#         self.use_gat = use_gat
-
-#         if sin_embedding:
-#             self.sin_embedding = SinusoidsEmbeddingNew()
-#             edge_feat_nf = self.sin_embedding.dim * 2
-#         else:
-#             self.sin_embedding = None
-#             edge_feat_nf = 2
-
-#         edge_feat_nf = edge_feat_nf + in_edge_nf
-
-#         self.embedding = nn.Linear(in_node_nf, self.hidden_nf)
-#         self.embedding_out = nn.Linear(self.hidden_nf, out_node_nf)
-
-#         # Add GIN layers if specified
-#         if self.use_gin:
-#             self.gin_layers = nn.ModuleList([GINLayer(self.hidden_nf, self.hidden_nf) for _ in range(n_layers)])
-
-#         # Add GAT layers if specified
-#         if self.use_gat:
-#             self.gat_layers = nn.ModuleList([GATConv(self.hidden_nf, self.hidden_nf // gat_heads, heads=gat_heads, concat=True) for _ in range(n_layers)])
-
-#         # Add Equivariant Blocks
-#         for i in range(n_layers):
-#             self.add_module(f"e_block_{i}", EquivariantBlock(
-#                 hidden_nf, edge_feat_nf=edge_feat_nf, device=device,
-#                 act_fn=act_fn, n_layers=inv_sublayers,
-#                 attention=attention, norm_diff=norm_diff, tanh=tanh,
-#                 coords_range=coords_range, norm_constant=norm_constant,
-#                 sin_embedding=self.sin_embedding,
-#                 normalization_factor=self.normalization_factor,
-#                 aggregation_method=self.aggregation_method,
-#                 reflection_equiv=self.reflection_equiv
-#             ))
-
-#         self.to(self.device)
-
-#     def forward(self, h, x, edge_index, node_mask=None, edge_mask=None, update_coords_mask=None,
-#                 batch_mask=None, edge_attr=None):
-#         edge_feat, _ = coord2diff(x, edge_index)
-#         if self.sin_embedding is not None:
-#             edge_feat = self.sin_embedding(edge_feat)
-#         if edge_attr is not None:
-#             edge_feat = torch.cat([edge_feat, edge_attr], dim=1)
-
-#         h = self.embedding(h)
-
-#         # Apply GIN layers if use_gin is True
-#         if self.use_gin:
-#             for gin_layer in self.gin_layers:
-#                 h = gin_layer(h, edge_index)
-
-#         # Apply GAT layers if use_gat is True
-#         if self.use_gat:
-#             for gat_layer in self.gat_layers:
-#                 h = gat_layer(h, edge_index)
-
-#         # Apply Equivariant Blocks
-#         for i in range(self.n_layers):
-#             h, x = self._modules[f"e_block_{i}"](
-#                 h, x, edge_index, node_mask=node_mask, edge_mask=edge_mask,
-#                 edge_attr=edge_feat, update_coords_mask=update_coords_mask,
-#                 batch_mask=batch_mask
-#             )
-
-#         # Output layer
-#         h = self.embedding_out(h)
-#         if node_mask is not None:
-#             h = h * node_mask
-#         return h, x
 import torch
 import torch.nn as nn
 from torch_geometric.nn import GATConv
@@ -387,17 +295,14 @@ class EGNNHybrid(nn.Module):
             h, _ = self.mha(h, h, h)
             h = h.squeeze(0)
 
-        # Apply GIN layers if use_gin is True
         if self.use_gin:
             for gin_layer in self.gin_layers:
                 h = gin_layer(h, edge_index)
 
-        # Apply GAT layers if use_gat is True
         if self.use_gat:
             for gat_layer in self.gat_layers:
                 h = gat_layer(h, edge_index)
 
-        # Apply Equivariant Blocks
         for i in range(self.n_layers):
             h, x = self._modules[f"e_block_{i}"](
                 h, x, edge_index, node_mask=node_mask, edge_mask=edge_mask,
@@ -405,7 +310,6 @@ class EGNNHybrid(nn.Module):
                 batch_mask=batch_mask
             )
 
-        # Output layer
         h = self.embedding_out(h)
         if node_mask is not None:
             h = h * node_mask
@@ -453,7 +357,6 @@ class EGNN(nn.Module):
 
     def forward(self, h, x, edge_index, node_mask=None, edge_mask=None, update_coords_mask=None,
                 batch_mask=None, edge_attr=None):
-        # Edit Emiel: Remove velocity as input
         edge_feat, _ = coord2diff(x, edge_index)
         if self.sin_embedding is not None:
             edge_feat = self.sin_embedding(edge_feat)
@@ -466,7 +369,6 @@ class EGNN(nn.Module):
                 edge_attr=edge_feat, update_coords_mask=update_coords_mask,
                 batch_mask=batch_mask)
 
-        # Important, the bias of the last linear might be non-zero
         h = self.embedding_out(h)
         if node_mask is not None:
             h = h * node_mask

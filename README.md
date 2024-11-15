@@ -1,7 +1,20 @@
 
 # DiffSBDD: Structure-based Drug Design with Equivariant Diffusion Models
 
-DiffSBDD is a cutting-edge project focused on leveraging equivariant diffusion models and graph neural networks (GNNs) for predicting molecular docking and binding affinities in structure-based drug design. This repository provides the tools and scripts necessary for training, evaluating, and visualizing models for protein-ligand interaction prediction.
+This repository contains the implementation of a molecular docking and binding affinity prediction pipeline using equivariant diffusion models and graph neural networks (GNNs). The project leverages EGNN, GAT, and various evaluation metrics to analyze protein-ligand interactions.
+
+# Table of Contents
+1. Project Structure
+2. Installation
+3. Dataset
+4. Usage
+5. Testing
+6. Visualization
+7. Configuration
+8. Key Components
+9. Kaggle/Cloud Environment
+
+
 
 ## Project Structure
 
@@ -57,25 +70,44 @@ cd DiffSBDD
 pip install -r requirements.txt
 ```
 
+
+## Dataset
+The prepocessed dataset is available in the Gdrive link (https://drive.google.com/drive/folders/1OySoHpAKGKxhpw9YOQdVf6Lk6XmHdt1T?usp=share_link) and Place the dataset in the `crossdock_data/` directory.
+
+
 ## Usage
 
-### Training
-To start training the model using k-fold cross-validation:
+### KFold Training with EGNN
+To start training the model using k-fold cross-validation (EGNN model):
 ```bash
 python kfold_train.py --config configs/args-egnn.yml
 ```
+### KFold Training with EGNN+GAT
+To start training the model using k-fold cross-validation (EGNN + GAT model):
+```bash
+python kfold_train.py --config configs/args-gat_hyb.yml
+```
+
+### Normal Training with EGNN
+To start training the model using k-fold cross-validation (EGNN model):
+```bash
+python train.py --config configs/args-egnn.yml
+```
+### Normal Training with EGNN+GAT
+To start training the model using Usual Training (EGNN + GAT model):
+```bash
+python train.py --config configs/args-gat_hyb.yml
+```
+
+
+
 
 ### Testing
-To evaluate the model on the test dataset:
+To evaluate the model on the test dataset (make sure u provide the model file):
 ```bash
-python test.py --config configs/args-gat_hyb.yml
+python metric.py 
 ```
 
-### Hyperparameter Optimization
-You can optimize hyperparameters using:
-```bash
-python optimize.py
-```
 
 ### Visualization
 For visual analysis, open the Jupyter notebook:
@@ -89,30 +121,72 @@ All model and training configurations are stored in the `configs/` directory. Yo
 
 ## Key Components
 
-- **SA_Score Module**: Calculates the Synthetic Accessibility (SA) score of generated molecules using `sascorer.py`.
-- **Docking Analysis**: The `docking.py` script analyzes molecular docking results, with support for Python 2.7 using `docking_py27.py`.
 - **Metrics and Evaluation**: The `metrics.py` script contains various metrics for evaluating model performance.
 - **Equivariant Diffusion Models**: Core diffusion models and dynamics implemented in the `equivariant_diffusion/` directory.
-- **Training and Testing**: The main training scripts include `kfold_train.py` and `test.py`.
+- **Equivariant Diffusion Models**: GNN variants with MultiHead Attention, GAT, GIN are also implemented in the `equivariant_diffusion/egnn_new` directory to make sure to have an effective comparison (Subjected to have more GPUs)
+- **Training and Testing**: The main training scripts include `kfold_train.py`, `train.py` and `metric.py` 
 
-## Deliverables
 
-See `deliverables.txt` for a comprehensive list of project deliverables and milestones.
 
-## Dependencies
+## Kaggle or Cloud Environment
 
-All dependencies are listed in `requirements.txt`. Install them using:
+All files are uploaded in the Siddant kaggle account (but there are problems in installing packages)
+Try this code for installing packages else go for the installation provided in the .ipynb file in the `kaggle` directory.
+
+Code file : https://www.kaggle.com/datasets/siddhantgehani/diffsbdd-gat1
+Dataset : https://www.kaggle.com/datasets/siddhantgehani/diffsbdd-dataset
+
 ```bash
-pip install -r requirements.txt
+#@title Install dependencies (this will take about 5-10 minutes)
+#@title  Install condacolab (the kernel will be restarted, after that you can execute the remaining cells)
+!pip install -q condacolab
+import condacolab
+condacolab.install()
+
+import os
+
+commands = [
+    "pip install torch==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu118",
+    "pip install pytorch-lightning==1.8.4",
+    "pip install wandb==0.13.1",
+    "pip install rdkit==2022.3.3",
+    "pip install biopython==1.79",
+    "pip install imageio==2.21.2",
+    "pip install scipy==1.7.3",
+    "pip install pyg-lib torch-scatter -f https://data.pyg.org/whl/torch-2.0.1+cu118.html",
+    "pip install networkx==2.8.6",
+    "pip install py3Dmol==1.8.1",
+    "conda install openbabel -c conda-forge",
+    "git clone https://github.com/arneschneuing/DiffSBDD.git",
+    "mkdir -p /content/DiffSBDD/checkpoints",
+    "wget -P /content/DiffSBDD/checkpoints https://zenodo.org/record/8183747/files/moad_fullatom_cond.ckpt",
+    "wget -P /content/DiffSBDD/checkpoints https://zenodo.org/record/8183747/files/moad_fullatom_joint.ckpt",
+]
+
+errors = {}
+
+if not os.path.isfile("/content/READY"):
+  for cmd in commands:
+    # os.system(cmd)
+    with os.popen(cmd) as f:
+      out = f.read()
+      status = f.close()
+
+    if status is not None:
+      errors[cmd] = out
+      print(f"\n\nAn error occurred while running '{cmd}'\n")
+      print("Status:\t", status)
+      print("Message:\t", out)
+
+if len(errors) == 0:
+  os.system("touch /content/READY")
 ```
 
-## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for more information.
+## Resuts 
 
-## Contact
-
-For any questions or feedback, please contact the project maintainer.
+Results are provided in the Gdrive link
+https://drive.google.com/drive/folders/1d7UAvvObLkHdkWASaSlDxli6KdUeyuKm?usp=share_link
 
 ---
 
