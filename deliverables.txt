@@ -1,0 +1,12 @@
+https://drive.google.com/drive/folders/1CzwxmTpjbrt83z_wBzcQncq84OVDPurM
+
+1. Pocket Conditioning 10 epochs learning
+2. Pocket Conditioning after 10 epochs metrics
+3. Pocket Conditioning Kfold (10 folds) learning + metrics
+4. Pocket Conditioning + GATs (novelty) 10 epochs learning
+5. Pocket Conditioning + GATs (novelty) after 10 epochs metrics
+6. Pocket Conditioning + GATs (novelty) Kfold (10 folds) learning + metrics
+
+
+
+
